@@ -22,7 +22,7 @@ class CardSwiper extends StatelessWidget {
       );
     }
 
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: size.height * 0.62,
       child: Swiper(
@@ -33,17 +33,22 @@ class CardSwiper extends StatelessWidget {
         itemBuilder: (BuildContext context, int index) {
           final movie = movies[index];
 
+          movie.heroId = 'swiper-${movie.id}';
+
           // i GestureDetector - Nos permite ponerle una acción al widget
           // i en este caso hacemo que vaya a la pantalla detailsScreen
           return GestureDetector(
             onTap: (() => Navigator.pushNamed(context, '/detailsScreen',
-                arguments: 'movie-instance')),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: FadeInImage(
-                placeholder: const AssetImage('assets/no-image.jpg'),
-                image: NetworkImage(movie.fullPosterImg),
-                fit: BoxFit.cover,
+                arguments: movie)),
+            child: Hero(
+              tag: movie.heroId!,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: FadeInImage(
+                  placeholder: const AssetImage('assets/no-image.jpg'),
+                  image: NetworkImage(movie.fullPosterImg),
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           );

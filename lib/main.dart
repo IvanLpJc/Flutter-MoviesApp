@@ -45,10 +45,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Peliculas',
       debugShowCheckedModeBanner: false,
-      initialRoute: '/home',
+      initialRoute: '/initScreen',
       routes: {
         '/home': (_) => const HomeScreen(),
         '/detailsScreen': (_) => const DetailsScreen(),
+        '/initScreen': (_) => const InitScreen(),
       },
       theme: ThemeData.light().copyWith(
         appBarTheme: const AppBarTheme(

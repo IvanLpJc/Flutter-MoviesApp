@@ -34,11 +34,26 @@ class Movie {
   double voteAverage;
   int voteCount;
 
+/**
+ * i Con esta propiedad pretendemos definir un id único para la película
+ * i y así evitar conflictos cuando la película aparece tanto en el swiper como 
+ * i en el slider
+ */
+
+  String? heroId;
+
   get fullPosterImg {
     if (posterPath != null) {
       return 'https://image.tmdb.org/t/p/w500$posterPath';
     }
 
+    return 'https://i.stack.imgur.com/GNhxO.png';
+  }
+
+  get fullBackdropPath {
+    if (posterPath != null) {
+      return 'https://image.tmdb.org/t/p/w500$posterPath';
+    }
     return 'https://i.stack.imgur.com/GNhxO.png';
   }
 
