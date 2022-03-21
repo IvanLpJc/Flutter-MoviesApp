@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:http/http.dart' as http;
+import 'package:peliculas/helpers/debouncer.dart';
 import 'package:peliculas/models/models.dart';
 import 'package:peliculas/models/popular_response.dart';
+import 'package:peliculas/models/search_response.dart';
 
 // i Debe extender de ChangeNotifier para que sea un provider
 // i como es un provider, puedo tener acceso a sus metodos y atributos PUBLICOS
@@ -15,8 +19,33 @@ class MoviesProvider extends ChangeNotifier {
   List<Movie> onDisplayMovies = [];
   List<Movie> popularMovies = [];
 
-  int _popularPage = 0
-;
+  // <id-pelicula>, cast
+  Map<int, List<Cast>> moviesCast = {};
+
+  int _popularPage = 0;
+  /**
+   * i Tenemos que implementar el Debouncer
+   */
+  final debouncer = Debouncer(
+    duration: const Duration(milliseconds: 500),
+  );
+
+  /**
+   * i Aquí creamos el stream que devolvera una lista de películas
+   * i Como el stream puede ser que lo estemos escuchando en varios objetos
+   * i así que le hacemos un broadcast()
+   * 
+   */
+
+  final StreamController<List<Movie>> _suggestionStreamController =
+      StreamController.broadcast();
+
+  /**
+   * i Tenemos que crear el stream para poder manegar lo que ocurre en el streamcontroller
+   * i y lo hacemos un getter para poder obtener la info
+   */
+  Stream<List<Movie>> get suggestionStream =>
+      _suggestionStreamController.stream;
 
   MoviesProvider() {
     print('MoviesProvider inicializado');
@@ -30,7 +59,7 @@ class MoviesProvider extends ChangeNotifier {
    */
 
   Future<String> _getJsonData(String endpoint, [int page = 1]) async {
-    var url = Uri.https(_baseUrl, endpoint,
+    final url = Uri.https(_baseUrl, endpoint,
         {'api_key': _apiKey, 'language': _language, 'page': '$page'});
 
     final response = await http.get(url);
@@ -69,5 +98,55 @@ class MoviesProvider extends ChangeNotifier {
      * i para que redibuje cuando se hace una modificación en los datos
      */
     notifyListeners();
+  }
+
+  Future<List<Cast>> getMovieCast(int movieId) async {
+    /**
+     * i Con esto comprobamos si el cast de película ya está en el vector de 
+     * i cast, lo devolvemos del vector
+     */
+    if (moviesCast.containsKey(movieId)) return moviesCast[movieId]!;
+
+    final jsonData = await _getJsonData('3/movie/$movieId/credits');
+    final creditsResponse = CreditsResponse.fromJson(jsonData);
+
+    moviesCast[movieId] = creditsResponse.cast;
+
+    return creditsResponse.cast;
+  }
+
+  // ignore: slash_for_doc_comments
+  /**
+   * i Hay que modificar este método para que nos devuelva un string
+   */
+
+  Future<List<Movie>> searchMovies(String query) async {
+    final url = Uri.https(_baseUrl, '3/search/movie',
+        {'api_key': _apiKey, 'language': _language, 'query': query});
+
+    final response = await http.get(url);
+    final searchResponse = SearchResponse.fromJson(response.body);
+
+    return searchResponse.results;
+  }
+
+  /**
+   * * Este método inserta el valor del query al stream pero solo cuando el 
+   * * debouncer lo dice, en este caso, cuando la persona deje de escribir
+   */
+
+  void getSuggestionByQuery(String searchTerm) {
+    debouncer.value = '';
+    debouncer.onValue = (value) async {
+      final results = await searchMovies(value);
+      _suggestionStreamController.add(results);
+    };
+
+    final timer = Timer.periodic(const Duration(milliseconds: 300), (_) {
+      debouncer.value = searchTerm;
+    });
+
+    Future.delayed(const Duration(milliseconds: 301))
+        .then((_) => timer.cancel());
   }
 }
