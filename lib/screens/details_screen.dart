@@ -1,6 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:peliculas/models/models.dart';
+import 'package:peliculas/providers/movies_provider.dart';
 import 'package:peliculas/widgets/widgets.dart';
+import 'package:provider/provider.dart';
 
 class DetailsScreen extends StatelessWidget {
   const DetailsScreen({Key? key}) : super(key: key);
@@ -12,6 +15,8 @@ class DetailsScreen extends StatelessWidget {
      * i para que lo trate como una película
      */
     final Movie movie = ModalRoute.of(context)!.settings.arguments as Movie;
+    final moviesProvider = Provider.of<MoviesProvider>(context, listen: false);
+
     return Scaffold(
       // Un scroll que nos permite usar los slivers
       body: CustomScrollView(
@@ -29,6 +34,38 @@ class DetailsScreen extends StatelessWidget {
             CastingCards(
               movieId: movie.id,
             ),
+            FutureBuilder(
+              future: moviesProvider.getSimilarMovies(movie.id),
+              builder: (_, AsyncSnapshot<List<Movie>> snapshot) {
+                if (!snapshot.hasData) {
+                  return Container(
+                    width: double.infinity,
+                    height: 200,
+                    child: const CupertinoActivityIndicator(),
+                  );
+                }
+
+                if (snapshot.data!.isEmpty) {
+                  return const SizedBox(
+                    width: double.infinity,
+                    height: 200,
+                    child: Center(
+                      child: Text('Recommendations not available'),
+                    ),
+                  );
+                }
+                final recommendations = snapshot.data!;
+
+                return MovieSlider(
+                  movies: recommendations,
+                  title: 'Películas similares', //opcional
+                  onNextPage: () => moviesProvider.getSimilarMovies(movie.id),
+                );
+              },
+            ),
+            SizedBox(
+              height: 15,
+            )
           ]))
         ],
       ),

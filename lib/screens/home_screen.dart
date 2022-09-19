@@ -38,18 +38,79 @@ class HomeScreen extends StatelessWidget {
               icon: const Icon(Icons.search_outlined))
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(children: [
-          CardSwiper(
-            movies: moviesProvider.onDisplayMovies,
-          ),
-          MovieSlider(
-            movies: moviesProvider.popularMovies,
-            title: 'Populares', //opcional
-            onNextPage: () => moviesProvider.getPopularMovies(),
-          ),
-        ]),
-      ),
+      body: Column(children: [
+        _DropDownButton(
+          moviesProvider: moviesProvider,
+        ),
+        Expanded(
+          child: GridView.builder(
+              padding: EdgeInsets.only(top: 20),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3, mainAxisSpacing: 100),
+              itemCount: moviesProvider.onDisplayMovies.length,
+              itemBuilder: (BuildContext context, int index) {
+                final movie = moviesProvider.onDisplayMovies[index];
+                return MoviePoster(movie, 'slider-${movie.id}');
+              }),
+        ),
+      ]),
+      // body: CustomScrollView(
+      //   slivers: [
+      //     SliverFillRemaining(
+      //       hasScrollBody: false,
+      //       child: Column(children: [
+      //         CardSwiper(
+      //           movies: moviesProvider.onDisplayMovies,
+      //         ),
+      //         _DropDownButton(moviesProvider: moviesProvider),
+      //         MovieSlider(
+      //           movies: moviesProvider.moviesByClassification,
+      //           onNextPage: () => moviesProvider.getMoviesByClassification(),
+      //         ),
+      //       ]),
+      //     )
+      //   ],
+      // ),
+    );
+  }
+}
+
+class _DropDownButton extends StatefulWidget {
+  const _DropDownButton({
+    Key? key,
+    required this.moviesProvider,
+  }) : super(key: key);
+
+  final MoviesProvider moviesProvider;
+
+  @override
+  State<_DropDownButton> createState() => _DropDownButtonState();
+}
+
+class _DropDownButtonState extends State<_DropDownButton> {
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField(
+      decoration: const InputDecoration(
+          contentPadding: EdgeInsets.symmetric(horizontal: 20),
+          enabledBorder: OutlineInputBorder(borderSide: BorderSide.none),
+          border: OutlineInputBorder(borderSide: BorderSide.none)),
+      isExpanded: true,
+      enableFeedback: true,
+      borderRadius: BorderRadius.circular(25),
+      style: const TextStyle(
+          fontSize: 20, color: Colors.black, fontWeight: FontWeight.bold),
+      items: widget.moviesProvider.dropdownItems,
+      onChanged: (String? value) {
+        if (widget.moviesProvider.selectedClassification != value) {
+          widget.moviesProvider.selectedClassification =
+              value ?? widget.moviesProvider.selectedClassification;
+          widget.moviesProvider.cleanSelection();
+          widget.moviesProvider.getMoviesByClassification();
+          setState(() {});
+        }
+      },
+      value: widget.moviesProvider.selectedClassification,
     );
   }
 }

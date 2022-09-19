@@ -50,15 +50,10 @@ class _MovieSliderState extends State<MovieSlider> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (widget.title == null)
-            const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  'Title by default',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ))
+            Container()
           else
             Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.only(left: 20, right: 20, bottom: 10),
                 child: Text(
                   widget.title!,
                   style: const TextStyle(
@@ -122,6 +117,5 @@ class _MoviePoster extends StatelessWidget {
         ],
       ),
     );
-    ;
   }
 }

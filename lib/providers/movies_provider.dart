@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:peliculas/helpers/debouncer.dart';
 import 'package:peliculas/models/models.dart';
-import 'package:peliculas/models/popular_response.dart';
 import 'package:peliculas/models/search_response.dart';
 
 // i Debe extender de ChangeNotifier para que sea un provider
@@ -17,12 +16,35 @@ class MoviesProvider extends ChangeNotifier {
   final String _language = 'es-ES';
 
   List<Movie> onDisplayMovies = [];
-  List<Movie> popularMovies = [];
+  List<Movie> moviesByClassification = [];
+  List<Movie> recommendedMovies = [];
+
+  List<DropdownMenuItem<String>> get dropdownItems {
+    List<DropdownMenuItem<String>> menuItems = [
+      const DropdownMenuItem(
+        child: Text('Populares'),
+        value: 'popular',
+      ),
+      const DropdownMenuItem(
+        child: Text('Próximamente'),
+        value: 'upcoming',
+      ),
+      const DropdownMenuItem(
+        child: Text('Mejor valoradas'),
+        value: 'top_rated',
+      ),
+    ];
+
+    return menuItems;
+  }
+
+  late String selectedClassification;
 
   // <id-pelicula>, cast
   Map<int, List<Cast>> moviesCast = {};
 
-  int _popularPage = 0;
+  int _classificationPage = 0;
+  int _recommendedPage = 0;
   /**
    * i Tenemos que implementar el Debouncer
    */
@@ -49,8 +71,9 @@ class MoviesProvider extends ChangeNotifier {
 
   MoviesProvider() {
     print('MoviesProvider inicializado');
+    selectedClassification = 'popular';
     getOnDisplayMovies();
-    getPopularMovies();
+    getMoviesByClassification();
   }
   // ignore: slash_for_doc_comments
   /**
@@ -82,22 +105,42 @@ class MoviesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  getPopularMovies() async {
-    _popularPage += 1;
+  cleanSelection() {
+    moviesByClassification = [];
+    _classificationPage = 0;
+    notifyListeners();
+  }
 
-    final jsonData = await _getJsonData('3/movie/popular', _popularPage);
+  getMoviesByClassification() async {
+    _classificationPage += 1;
+
+    final jsonData = await _getJsonData(
+        '3/movie/$selectedClassification', _classificationPage);
     final popularResponse = PopularResponse.fromJson(jsonData);
+
     //final Map<String, dynamic> decodedData = json.decode(response.body);
 
     //popularMovies = popularResponse.results;
     // i Usamos esta forma de asignar los resultados usando deestructuración
     // i del objeto, de este modo, mantenemos las películas anteriores cuando cargamos las nuevas
-    popularMovies = [...popularMovies, ...popularResponse.results];
+    moviesByClassification = [
+      ...moviesByClassification,
+      ...popularResponse.results
+    ];
     /**
      * i El notifyListener le avisa a todos los widgets que esten escuchando
      * i para que redibuje cuando se hace una modificación en los datos
      */
     notifyListeners();
+  }
+
+  Future<List<Movie>> getSimilarMovies(int movieId) async {
+    _recommendedPage += 1;
+
+    final jsonData = await _getJsonData('3/movie/$movieId/similar');
+    final recommendationsResponse = PopularResponse.fromJson(jsonData);
+
+    return recommendationsResponse.results;
   }
 
   Future<List<Cast>> getMovieCast(int movieId) async {
